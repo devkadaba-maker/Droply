@@ -10,26 +10,30 @@ export async function DELETE(request: NextRequest, props: {params: Promise<{file
         const {userId} = await auth()
         const {fileId} = await props.params
 
-        if(!userId){
-            return NextResponse.json({error: "Unauthorized"}, {status: 401})
+        if (!userId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
-        if(!fileId){
-            return NextResponse.json({error:"File not found"}, {status: 404})
+        if (!fileId) {
+            return NextResponse.json({ error: "Invalid file ID" }, { status: 400 })
         }
 
-        const deletedFile = await db.delete(files).where(
-            and(
-                eq(files.id, fileId),
-                eq(files.userId, userId)
+        const deleted = await db
+            .delete(files)
+            .where(
+                and(
+                    eq(files.id, fileId),
+                    eq(files.userId, userId)
+                )
             )
-        )
-        if(!deletedFile){
-            return NextResponse.json({error: "File not found"}, {status: 404})
+            .returning();
+
+        if (deleted.length === 0) {
+            return NextResponse.json({ error: "File not found" }, { status: 404 })
         }
-        return NextResponse.json({message: "File deleted successfully"}, {status: 200})
-    }catch(error){
+        return NextResponse.json({ message: "File deleted successfully" }, { status: 200 })
+    } catch (error) {
         console.error(error)
-        return NextResponse.json({error: "Internal server error with the delete endpoint"}, {status: 500})
+        return NextResponse.json({ error: "Internal server error with the delete endpoint" }, { status: 500 })
     }
 }
