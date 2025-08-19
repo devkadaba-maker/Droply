@@ -1,0 +1,77 @@
+import { files } from "@/lib/db/schema";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "@/lib/db";
+import { eq, and } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
+
+
+export async function POST(request: NextRequest){
+    try {
+        const { userId } = await auth();
+        if(!userId){
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const body = await request.json()
+        const { name, userId : bodyUserId ,parentId = null} = body
+
+      if(bodyUserId !== userId){
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+
+      }
+
+      if(!name || typeof name !== "string" || name.trim() === ""){
+        return NextResponse.json({ error: "Invalid foldername" }, { status: 400 });
+      }
+
+      if(parentId){
+        const [parentFolder] = await db
+        .select()
+        .from(files)
+        .where(
+            and(
+                eq(files.id, parentId), 
+                eq(files.userId, userId),
+                eq(files.isFolder, true)
+            )
+
+        )
+      
+      if(!parentFolder){
+        return NextResponse.json({ error: "Parent folder not found" }, { status: 404 });
+      }
+    }
+    //create folder
+            const folderData = {
+                id: uuidv4(), 
+                name : name.trim(), 
+                path: `/folders/${userId}/${uuidv4()}`, 
+                size:0, 
+                type: "folder", 
+                fileUrl: "",
+                thumbnailUrl: "",
+                isFolder: true,
+                userId,
+                parentId,  
+                isDeleted: false, 
+                isStarred: false, 
+                isTrashed: false
+
+
+            }
+
+            const [newFolder] = await db.insert(files).values(folderData).returning()
+
+            return NextResponse.json({
+                sucess: true,
+                message: "folder created sucessfully", 
+                status: 201,
+                folder: newFolder
+            })
+
+    } catch (error) {
+        
+    }
+}
