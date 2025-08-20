@@ -93,7 +93,7 @@ export default function FileUpload({
     if (!user) return
 
     setUploadFiles(prev => prev.map((f, i) => 
-      i === index ? { ...f, status: 'uploading' } : f
+      i === index ? { ...f, status: 'uploading', progress: 0 } : f
     ))
 
     try {
@@ -104,13 +104,23 @@ export default function FileUpload({
         formData.append('parentId', currentFolder)
       }
 
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadFiles(prev => prev.map((f, i) => 
+          i === index && f.progress < 90 ? { ...f, progress: f.progress + 10 } : f
+        ))
+      }, 200)
+
       const response = await fetch('/api/files/upload', {
         method: 'POST',
         body: formData,
       })
 
+      clearInterval(progressInterval)
+
       if (!response.ok) {
-        throw new Error('Upload failed')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Upload failed')
       }
 
       setUploadFiles(prev => prev.map((f, i) => 

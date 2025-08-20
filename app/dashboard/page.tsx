@@ -9,7 +9,10 @@ import FileGrid from '@/components/FileGrid'
 import Breadcrumb from '@/components/Breadcrumb'
 import CreateFolderModal from '@/components/CreateFolderModal'
 import FileUpload from '@/components/FileUpload'
+import FilePreviewModal from '@/components/FilePreviewModal'
 import { useDisclosure } from "@heroui/modal"
+import { Button } from "@heroui/button"
+import { Trash2 } from "lucide-react"
 
 interface FileItem {
   id: string
@@ -39,7 +42,9 @@ export default function DashboardPage() {
 
   const { isOpen: isCreateFolderOpen, onOpen: onCreateFolderOpen, onClose: onCreateFolderClose } = useDisclosure()
   const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure()
+  const { isOpen: isPreviewOpen, onOpen: onPreviewOpen, onClose: onPreviewClose } = useDisclosure()
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
+  const [previewFile, setPreviewFile] = useState<FileItem | null>(null)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -93,16 +98,46 @@ export default function DashboardPage() {
     try {
       if (action === 'toggleStar') {
         await fetch(`/api/files/${file.id}/star`, { method: 'PATCH' })
+        fetchFiles(currentFolder) // Refresh the file list
       } else if (action === 'moveToTrash') {
         await fetch(`/api/files/${file.id}/trash`, { method: 'PATCH' })
+        fetchFiles(currentFolder) // Refresh the file list
       } else if (action === 'download' && file.fileUrl) {
         window.open(file.fileUrl, '_blank')
-      } else if (action === 'preview' && file.fileUrl) {
-        window.open(file.fileUrl, '_blank')
+      } else if (action === 'preview') {
+        setPreviewFile(file)
+        onPreviewOpen()
+      } else if (action === 'delete') {
+        if (window.confirm('Are you sure you want to permanently delete this file?')) {
+          await fetch(`/api/files/${file.id}/delete`, { method: 'DELETE' })
+          fetchFiles(currentFolder) // Refresh the file list
+        }
       }
-      fetchFiles(currentFolder) // Refresh the file list
     } catch (error) {
       console.error('Error performing file action:', error)
+    }
+  }
+
+  // Handle file download from preview
+  const handleDownload = (file: FileItem) => {
+    if (file.fileUrl) {
+      window.open(file.fileUrl, '_blank')
+    }
+  }
+
+  // Handle empty trash
+  const handleEmptyTrash = async () => {
+    if (window.confirm('Are you sure you want to permanently delete all files in trash? This action cannot be undone.')) {
+      try {
+        const response = await fetch('/api/files/empty-trash', {
+          method: 'DELETE'
+        })
+        if (response.ok) {
+          fetchFiles(currentFolder) // Refresh the file list
+        }
+      } catch (error) {
+        console.error('Error emptying trash:', error)
+      }
     }
   }
 
@@ -179,13 +214,28 @@ export default function DashboardPage() {
           onViewModeChange={setViewMode}
           onUploadClick={handleUploadClick}
           onCreateFolderClick={onCreateFolderOpen}
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
         />
 
         <main className="flex-1 p-6">
-          <Breadcrumb
-            items={breadcrumb}
-            onNavigate={handleBreadcrumbClick}
-          />
+          <div className="flex items-center justify-between mb-6">
+            <Breadcrumb
+              items={breadcrumb}
+              onNavigate={handleBreadcrumbClick}
+            />
+            
+            {activeSection === 'trash' && filteredFiles.length > 0 && (
+              <Button
+                color="danger"
+                variant="bordered"
+                startContent={<Trash2 className="h-4 w-4" />}
+                onClick={handleEmptyTrash}
+              >
+                Empty Trash
+              </Button>
+            )}
+          </div>
 
           {loading ? (
             <div className="flex items-center justify-center h-64">
@@ -214,6 +264,13 @@ export default function DashboardPage() {
         onClose={onUploadClose}
         onUploadComplete={handleUploadComplete}
         currentFolder={currentFolder}
+      />
+
+      <FilePreviewModal
+        file={previewFile}
+        isOpen={isPreviewOpen}
+        onClose={onPreviewClose}
+        onDownload={handleDownload}
       />
     </div>
   )

@@ -172,39 +172,50 @@ export default function FileGrid({
                     </Button>
                   </DropdownTrigger>
                   <DropdownMenu>
-                    {!file.isFolder && (
+                    {[
+                      ...(!file.isFolder ? [
+                        <DropdownItem
+                          key="preview"
+                          startContent={<Eye className="h-4 w-4" />}
+                          onClick={(e) => handleActionClick('preview', file, e as React.MouseEvent)}
+                        >
+                          Preview
+                        </DropdownItem>,
+                        <DropdownItem
+                          key="download"
+                          startContent={<Download className="h-4 w-4" />}
+                          onClick={(e) => handleActionClick('download', file, e as React.MouseEvent)}
+                        >
+                          Download
+                        </DropdownItem>
+                      ] : []),
                       <DropdownItem
-                        key="preview"
-                        startContent={<Eye className="h-4 w-4" />}
-                        onClick={(e) => handleActionClick('preview', file, e as React.MouseEvent)}
+                        key="star"
+                        startContent={<Star className="h-4 w-4" />}
+                        onClick={(e) => handleActionClick('toggleStar', file, e as React.MouseEvent)}
                       >
-                        Preview
-                      </DropdownItem>
-                    )}
-                    {!file.isFolder && (
-                      <DropdownItem
-                        key="download"
-                        startContent={<Download className="h-4 w-4" />}
-                        onClick={(e) => handleActionClick('download', file, e as React.MouseEvent)}
-                      >
-                        Download
-                      </DropdownItem>
-                    )}
-                    <DropdownItem
-                      key="star"
-                      startContent={<Star className="h-4 w-4" />}
-                      onClick={(e) => handleActionClick('toggleStar', file, e as React.MouseEvent)}
-                    >
-                      {file.isStarred ? 'Unstar' : 'Star'}
-                    </DropdownItem>
-                    <DropdownItem
-                      key="trash"
-                      startContent={<Trash2 className="h-4 w-4" />}
-                      color="danger"
-                      onClick={(e) => handleActionClick('moveToTrash', file, e as React.MouseEvent)}
-                    >
-                      Move to Trash
-                    </DropdownItem>
+                        {file.isStarred ? 'Unstar' : 'Star'}
+                      </DropdownItem>,
+                      {!file.isTrash ? (
+                        <DropdownItem
+                          key="trash"
+                          startContent={<Trash2 className="h-4 w-4" />}
+                          color="warning"
+                          onClick={(e) => handleActionClick('moveToTrash', file, e as React.MouseEvent)}
+                        >
+                          Move to Trash
+                        </DropdownItem>
+                      ) : (
+                        <DropdownItem
+                          key="delete"
+                          startContent={<Trash2 className="h-4 w-4" />}
+                          color="danger"
+                          onClick={(e) => handleActionClick('delete', file, e as React.MouseEvent)}
+                        >
+                          Delete Forever
+                        </DropdownItem>
+                      )}
+                    ]}
                   </DropdownMenu>
                 </Dropdown>
               </div>
@@ -260,39 +271,50 @@ export default function FileGrid({
                     </Button>
                   </DropdownTrigger>
                   <DropdownMenu>
-                    {!file.isFolder && (
+                    {[
+                      ...(!file.isFolder ? [
+                        <DropdownItem
+                          key="preview"
+                          startContent={<Eye className="h-4 w-4" />}
+                          onClick={(e) => handleActionClick('preview', file, e as React.MouseEvent)}
+                        >
+                          Preview
+                        </DropdownItem>,
+                        <DropdownItem
+                          key="download"
+                          startContent={<Download className="h-4 w-4" />}
+                          onClick={(e) => handleActionClick('download', file, e as React.MouseEvent)}
+                        >
+                          Download
+                        </DropdownItem>
+                      ] : []),
                       <DropdownItem
-                        key="preview"
-                        startContent={<Eye className="h-4 w-4" />}
-                        onClick={(e) => handleActionClick('preview', file, e as React.MouseEvent)}
+                        key="star"
+                        startContent={<Star className="h-4 w-4" />}
+                        onClick={(e) => handleActionClick('toggleStar', file, e as React.MouseEvent)}
                       >
-                        Preview
-                      </DropdownItem>
-                    )}
-                    {!file.isFolder && (
-                      <DropdownItem
-                        key="download"
-                        startContent={<Download className="h-4 w-4" />}
-                        onClick={(e) => handleActionClick('download', file, e as React.MouseEvent)}
-                      >
-                        Download
-                      </DropdownItem>
-                    )}
-                    <DropdownItem
-                      key="star"
-                      startContent={<Star className="h-4 w-4" />}
-                      onClick={(e) => handleActionClick('toggleStar', file, e as React.MouseEvent)}
-                    >
-                      {file.isStarred ? 'Unstar' : 'Star'}
-                    </DropdownItem>
-                    <DropdownItem
-                      key="trash"
-                      startContent={<Trash2 className="h-4 w-4" />}
-                      color="danger"
-                      onClick={(e) => handleActionClick('moveToTrash', file, e as React.MouseEvent)}
-                    >
-                      Move to Trash
-                    </DropdownItem>
+                        {file.isStarred ? 'Unstar' : 'Star'}
+                      </DropdownItem>,
+                      {!file.isTrash ? (
+                        <DropdownItem
+                          key="trash"
+                          startContent={<Trash2 className="h-4 w-4" />}
+                          color="warning"
+                          onClick={(e) => handleActionClick('moveToTrash', file, e as React.MouseEvent)}
+                        >
+                          Move to Trash
+                        </DropdownItem>
+                      ) : (
+                        <DropdownItem
+                          key="delete"
+                          startContent={<Trash2 className="h-4 w-4" />}
+                          color="danger"
+                          onClick={(e) => handleActionClick('delete', file, e as React.MouseEvent)}
+                        >
+                          Delete Forever
+                        </DropdownItem>
+                      )}
+                    ]}
                   </DropdownMenu>
                 </Dropdown>
               </div>

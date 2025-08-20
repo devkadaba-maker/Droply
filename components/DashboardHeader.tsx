@@ -11,6 +11,7 @@ import {
   Sun,
   Moon
 } from "lucide-react"
+import MobileNav from "./MobileNav"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 
@@ -21,6 +22,8 @@ interface DashboardHeaderProps {
   onViewModeChange: (mode: 'grid' | 'list') => void
   onUploadClick: () => void
   onCreateFolderClick: () => void
+  activeSection: 'all' | 'starred' | 'trash'
+  onSectionChange: (section: 'all' | 'starred' | 'trash') => void
 }
 
 export default function DashboardHeader({
@@ -29,7 +32,9 @@ export default function DashboardHeader({
   viewMode,
   onViewModeChange,
   onUploadClick,
-  onCreateFolderClick
+  onCreateFolderClick,
+  activeSection,
+  onSectionChange
 }: DashboardHeaderProps) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -45,6 +50,13 @@ export default function DashboardHeader({
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
       <div className="flex items-center justify-between gap-4">
+        {/* Mobile Navigation */}
+        <MobileNav
+          activeSection={activeSection}
+          onSectionChange={onSectionChange}
+          onCreateFolderClick={onCreateFolderClick}
+          onUploadClick={onUploadClick}
+        />
         {/* Search */}
         <div className="flex-1 max-w-md">
           <Input

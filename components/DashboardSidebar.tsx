@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { useClerk, useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 interface DashboardSidebarProps {
   activeSection: 'all' | 'starred' | 'trash'
@@ -59,7 +60,7 @@ export default function DashboardSidebar({
   ]
 
   return (
-    <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 min-h-screen flex flex-col">
+    <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 min-h-screen flex flex-col hidden md:flex">
       {/* Logo */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Droply</h1>
@@ -140,6 +141,8 @@ export default function DashboardSidebar({
             variant="light"
             className="w-full justify-start h-8 text-gray-600 dark:text-gray-400"
             startContent={<Settings className="h-4 w-4" />}
+            as={Link}
+            href="/settings"
           >
             Settings
           </Button>
