@@ -95,6 +95,10 @@ export default function DashboardPage() {
         await fetch(`/api/files/${file.id}/star`, { method: 'PATCH' })
       } else if (action === 'moveToTrash') {
         await fetch(`/api/files/${file.id}/trash`, { method: 'PATCH' })
+      } else if (action === 'download' && file.fileUrl) {
+        window.open(file.fileUrl, '_blank')
+      } else if (action === 'preview' && file.fileUrl) {
+        window.open(file.fileUrl, '_blank')
       }
       fetchFiles(currentFolder) // Refresh the file list
     } catch (error) {
@@ -159,20 +163,22 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardHeader
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onUploadClick={handleUploadClick}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+      <DashboardSidebar
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
         onCreateFolderClick={onCreateFolderOpen}
+        onUploadClick={handleUploadClick}
       />
 
-      <div className="flex">
-        <DashboardSidebar
-          activeSection={activeSection}
-          onSectionChange={setActiveSection}
+      <div className="flex-1 flex flex-col min-h-screen">
+        <DashboardHeader
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onUploadClick={handleUploadClick}
+          onCreateFolderClick={onCreateFolderOpen}
         />
 
         <main className="flex-1 p-6">
@@ -212,3 +218,4 @@ export default function DashboardPage() {
     </div>
   )
 }
+

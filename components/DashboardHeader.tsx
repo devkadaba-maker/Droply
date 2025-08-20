@@ -2,8 +2,17 @@
 
 import { Button } from "@heroui/button"
 import { Input } from "@heroui/input"
-import { User, Upload, Plus, Search, Grid, List } from 'lucide-react'
-import { useUser } from '@clerk/nextjs'
+import { 
+  Search, 
+  Grid3x3, 
+  List,
+  Upload,
+  FolderPlus,
+  Sun,
+  Moon
+} from "lucide-react"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
 interface DashboardHeaderProps {
   searchQuery: string
@@ -22,78 +31,87 @@ export default function DashboardHeader({
   onUploadClick,
   onCreateFolderClick
 }: DashboardHeaderProps) {
-  const { user } = useUser()
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null
+  }
 
   return (
-    <header className="bg-card border-b border-border px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-foreground">Droply</h1>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="light"
-              startContent={<Upload className="h-4 w-4" />}
-              onClick={onUploadClick}
-            >
-              Upload
-            </Button>
-            <Button
-              variant="light"
-              startContent={<Plus className="h-4 w-4" />}
-              onClick={onCreateFolderClick}
-            >
-              New Folder
-            </Button>
-            <input
-              id="file-upload"
-              type="file"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                // Handle file upload here
-                console.log('Files selected:', e.target.files)
-              }}
-            />
-          </div>
+    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+      <div className="flex items-center justify-between gap-4">
+        {/* Search */}
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search files and folders..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            startContent={<Search className="h-4 w-4 text-gray-400" />}
+            classNames={{
+              input: "text-sm",
+              inputWrapper: "h-10"
+            }}
+          />
         </div>
 
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search files..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 w-64"
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {/* View Mode Toggle */}
+          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
             <Button
               isIconOnly
-              variant="light"
               size="sm"
+              variant={viewMode === 'grid' ? 'solid' : 'light'}
+              color={viewMode === 'grid' ? 'primary' : 'default'}
               onClick={() => onViewModeChange('grid')}
-              className={viewMode === 'grid' ? 'bg-primary text-primary-foreground' : ''}
             >
-              <Grid className="h-4 w-4" />
+              <Grid3x3 className="h-4 w-4" />
             </Button>
             <Button
               isIconOnly
-              variant="light"
               size="sm"
+              variant={viewMode === 'list' ? 'solid' : 'light'}
+              color={viewMode === 'list' ? 'primary' : 'default'}
               onClick={() => onViewModeChange('list')}
-              className={viewMode === 'list' ? 'bg-primary text-primary-foreground' : ''}
             >
               <List className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <User className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-sm font-medium">{user?.firstName || user?.username}</span>
+          {/* Theme Toggle */}
+          <Button
+            isIconOnly
+            variant="light"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
+
+          {/* Mobile Action Buttons */}
+          <div className="flex items-center gap-2 md:hidden">
+            <Button
+              isIconOnly
+              color="primary"
+              onClick={onUploadClick}
+            >
+              <Upload className="h-4 w-4" />
+            </Button>
+            <Button
+              isIconOnly
+              variant="bordered"
+              onClick={onCreateFolderClick}
+            >
+              <FolderPlus className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
