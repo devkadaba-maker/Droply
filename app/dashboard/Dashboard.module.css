@@ -1,0 +1,82 @@
+/* app/dashboard/Dashboard.module.css */
+
+.pageWrapper {
+    display: flex;
+  }
+  
+  .sidebar {
+    background-color: white;
+    width: 256px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    border-right: 1px solid #e2e8f0;
+  }
+  
+  .sidebar h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2563eb;
+    margin-bottom: 40px;
+  }
+  
+  .sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .sidebar .uploadButton {
+    margin-top: auto;
+    width: 100%;
+  }
+  
+  .mainContent {
+    margin-left: 256px;
+    padding: 32px;
+    width: 100%;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .header h2 {
+    font-size: 1.875rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  
+  .fileGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 24px;
+    margin-top: 32px;
+  }
+  
+  .navLink {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    color: #475569;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  
+  .navLink:hover {
+    background-color: #f1f5f9;
+    color: #2563eb;
+  }
+  
+  .navLink span {
+    margin-left: 12px;
+  }
