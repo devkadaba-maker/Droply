@@ -1,7 +1,7 @@
 "use client"
 import { ThemeProviderProps } from "next-themes";
 import { ImageKitProvider } from "imagekitio-next";
-import {HeroUIProvider} from "@heroui/react"
+import {NextUIProvider} from "@nextui-org/react"
 export interface ProviderProps{
     children: React.ReactNode, 
     themeProps?: ThemeProviderProps
@@ -24,9 +24,9 @@ export function Providers({children, themeProps}: ProviderProps){
                 publicKey={process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY}
                 urlEndpoint={process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}
                 >
-            <HeroUIProvider>
+            <NextUIProvider>
             {children}
-            </HeroUIProvider>
+            </NextUIProvider>
             </ImageKitProvider>
             
         

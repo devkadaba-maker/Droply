@@ -6,7 +6,7 @@ import {
   Plus, Folder, File, Star, Trash2, Home, Clock, Search, MoreVertical
 } from 'lucide-react';
 // NEW: Import Modal components and our FileUpload component
-import { Modal, ModalContent, ModalHeader, ModalBody, useDisclosure } from '@heroui/modal';
+import { Modal, ModalContent, ModalHeader, ModalBody, Button } from '@nextui-org/react';
 import FileUpload from '@/components/FileUpload';
 
 // --- Interfaces and NavLink component remain the same ---
@@ -41,8 +41,13 @@ export default function DashboardPage() {
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [activeView, setActiveView] = useState('home');
 
-  // NEW: Add state management for the modal window
-  const {isOpen, onOpen, onOpenChange, onClose} = useDisclosure();
+  // NEW: Add state management for the modal window - temporarily using useState instead of useDisclosure
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Add useEffect to log state changes
+  useEffect(() => {
+    console.log('🔄 Modal state changed - isOpen:', isOpen);
+  }, [isOpen]);
 
   // --- Data-fetching and action functions (no changes) ---
   useEffect(() => { if (userId) fetchFiles(); }, [userId, currentFolder, activeView]);
@@ -75,13 +80,16 @@ export default function DashboardPage() {
         </div>
         
         {/* MODIFIED: The onClick handler now opens the modal */}
-        <button 
-          onClick={onOpen}
+        <Button
+          onPress={() => {
+            console.log('New button clicked, opening modal');
+            setIsOpen(true);
+          }}
           className="flex items-center justify-center gap-3 bg-white w-32 h-14 rounded-2xl shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)] hover:shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)] transition-shadow mb-6"
+          startContent={<Plus size={24} />}
         >
-          <Plus size={24} />
-          <span className="text-base font-medium">New</span>
-        </button>
+          New
+        </Button>
         
         <nav className="flex flex-col gap-1">
           <div onClick={() => handleNavClick('home')}><NavLink icon={<Home size={20} />} label="Home" isActive={activeView === 'home'} /></div>
@@ -113,21 +121,44 @@ export default function DashboardPage() {
           {/* ... File list is unchanged ... */}
         </div>
 
-        {/* NEW: Add the Modal with the FileUpload component */}
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-          <ModalContent>
-            <ModalHeader className="flex flex-col gap-1">Upload a File</ModalHeader>
-            <ModalBody>
-              <FileUpload
-                parentId={currentFolder}
-                onUploadComplete={() => {
-                  fetchFiles(); // This refreshes the file list
-                  setTimeout(() => onClose(), 1500); // Closes the modal after a success message
-                }}
-              />
-            </ModalBody>
-          </ModalContent>
-        </Modal>
+        {/* TEST: Simple div modal first */}
+        {isOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={() => setIsOpen(false)}
+          >
+            <div
+              className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-blue-800">Simple Modal Test</h3>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="text-center space-y-4">
+                <p className="text-lg font-semibold text-green-600">🎉 Modal is working!</p>
+                <p className="text-sm text-gray-600">This is a simple div modal to test basic functionality.</p>
+
+                <button
+                  onClick={() => alert('Button works!')}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Test Button - Click me!
+                </button>
+
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 mt-4">
+                  <p className="text-sm text-gray-500">File upload area would go here</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

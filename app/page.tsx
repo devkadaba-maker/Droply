@@ -9,7 +9,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // This will run when the page loads and immediately redirect to the dashboard.
+    // This will immediately redirect anyone visiting the homepage to the correct dashboard.
     router.push('/dashboard');
   }, [router]);
 
