@@ -16,43 +16,66 @@ export default function FileUpload({ parentId, onUploadComplete }: FileUploadPro
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [uploadingFileName, setUploadingFileName] = useState("");
 
-  const onUploadStart = () => {
+  const onUploadStart = (evt: any) => {
+    setUploadingFileName(evt.target.files[0].name);
     setError(null);
     setSuccess(false);
     setProgress(0);
   };
 
   const onUploadProgress = (progress: { loaded: number; total: number }) => {
-    const percentage = Math.round((progress.loaded / progress.total) * 100);
-    setProgress(percentage);
+    setProgress(Math.round((progress.loaded / progress.total) * 100));
   };
 
   const onUploadError = (err: any) => {
+    // This will now catch any error, including from a failed authenticator
     setError(err.message || "Upload failed. Please try again.");
     setProgress(0);
   };
 
-  const onUploadSuccess = () => {
-    setSuccess(true);
-    setProgress(100);
-    onUploadComplete();
+  const onUploadSuccess = async (res: any) => {
+    try {
+      const apiResponse = await fetch('/api/files/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...res, parentId }),
+      });
+      if (!apiResponse.ok) {
+        throw new Error('Failed to save file metadata.');
+      }
+      setSuccess(true);
+      setProgress(100);
+      onUploadComplete();
+    } catch (error: any) {
+      setError(error.message);
+    }
   };
 
   const authenticator = async () => {
     try {
-        const response = await fetch('/api/imagekit-auth');
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Authentication request failed with status: ${response.status}. ${errorText}`);
-        }
-        return await response.json();
+      const response = await fetch('/api/imagekit-auth');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Authentication request failed: ${response.status}. ${errorText}`);
+      }
+      return await response.json();
     } catch (error: any) {
-        console.error("Authentication error:", error.message);
-        // We need to re-throw the error so ImageKit's onError handler can catch it.
-        throw new Error("Could not authenticate with the server.");
+      // Re-throwing the error here is crucial. It ensures that the IKUpload
+      // component's onError handler will be triggered if auth fails.
+      throw error;
     }
   };
+
+  if (!userId) {
+    return (
+      <div className="bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl p-6 text-center opacity-50">
+        <UploadCloud className="mx-auto h-12 w-12 text-slate-400" />
+        <p className="mt-2 font-semibold text-slate-700">Authenticating...</p>
+      </div>
+    );
+  }
 
   return (
     <ImageKitContext
@@ -62,17 +85,17 @@ export default function FileUpload({ parentId, onUploadComplete }: FileUploadPro
         authenticator,
       }}
     >
-      <div className="relative bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl p-6 text-center">
+      <div className="relative bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl p-6 text-center" suppressHydrationWarning>
         <UploadCloud className="mx-auto h-12 w-12 text-slate-400" />
         <p className="mt-2 font-semibold text-slate-700">
           Click to upload or drag and drop
         </p>
-        <p className="text-xs text-slate-500 mt-1">
-          PDF, JPG, PNG, etc. (up to 50MB)
-        </p>
         
         <IKUpload
-          folder={parentId ? `/droply/${userId}/folder/${parentId}` : `/droply/${userId}`}
+          fileName={uploadingFileName}
+          // --- THIS IS THE FINAL FIX ---
+          // We simplify the folder path to a clean structure.
+          folder={parentId ? `/${userId}/${parentId}` : `/${userId}`}
           useUniqueFileName={true}
           onUploadStart={onUploadStart}
           onUploadProgress={onUploadProgress}

@@ -46,11 +46,7 @@ export default function DashboardPage() {
 
   // --- Data-fetching and action functions (no changes) ---
   useEffect(() => { if (userId) fetchFiles(); }, [userId, currentFolder, activeView]);
-  // const fetchFiles = async () => { /* ... Function remains the same ... */ };
-  // const handleFileClick = (file: FileData) => { /* ... Function remains the same ... */ };
-  // const handleNavClick = (view: string) => { /* ... Function remains the same ... */ };
   
-  // (Functions included for completeness)
   const fetchFiles = async () => {
     if (!userId) return;
     let url = `/api/files?userId=${userId}`;
@@ -98,7 +94,17 @@ export default function DashboardPage() {
       {/* --- Main Content Area --- */}
       <main className="ml-64 p-6 w-full">
         <header className="flex justify-between items-center w-full mb-8">
-          {/* ... Header content is unchanged ... */}
+          <div className="relative flex-grow max-w-[720px]">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search in Drive"
+                className="w-full h-12 bg-[#e8eaed] rounded-full pl-14 pr-4 text-base placeholder:text-slate-500 focus:bg-white focus:shadow-[0_1px_1px_0_rgba(0,0,0,.1),0_2px_6px_2px_rgba(0,0,0,.08)] focus:outline-none transition-all"
+              />
+          </div>
+          <div className="flex items-center gap-4">
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </header>
         
         <h2 className="text-2xl text-slate-800 mb-4 capitalize">{activeView === 'bin' ? 'Bin' : activeView}</h2>
