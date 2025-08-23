@@ -12,6 +12,7 @@ import {
   Clock,
   Search,
   MoreVertical,
+  Download, // Make sure Download icon is imported
 } from 'lucide-react';
 import NewItemModal from './NewItemModal';
 import FileUploadArea from './FileUploadArea';
@@ -61,12 +62,10 @@ export default function DashboardPage() {
 
     let queryParams = `userId=${userId}`;
 
-    // Add parent folder if navigating within folders (only for home view)
     if (view === 'home' && currentFolder) {
       queryParams += `&parentId=${currentFolder}`;
     }
 
-    // Add view-specific parameters
     if (view === 'starred') {
       queryParams += '&isStarred=true';
     } else if (view === 'trash') {
@@ -84,13 +83,13 @@ export default function DashboardPage() {
     if (file.isFolder && view === 'home') {
       setCurrentFolder(file.id);
     } else if (!file.isFolder) {
-      window.open(file.fileUrl);
+      window.open(file.fileUrl, '_blank');
     }
   };
 
   const handleNavigation = (newView: 'home' | 'starred' | 'trash') => {
     setView(newView);
-    setCurrentFolder(null); // Reset folder navigation when switching views
+    setCurrentFolder(null);
   };
 
   const toggleStar = async (fileId: string, isCurrentlyStarred: boolean) => {
@@ -101,9 +100,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ isStarred: !isCurrentlyStarred })
       });
 
-      if (response.ok) {
-        fetchFiles(); // Refresh the file list
-      }
+      if (response.ok) fetchFiles();
     } catch (error) {
       console.error('Error toggling star:', error);
     }
@@ -117,9 +114,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ isTrash: !isCurrentlyTrashed })
       });
 
-      if (response.ok) {
-        fetchFiles(); // Refresh the file list
-      }
+      if (response.ok) fetchFiles();
     } catch (error) {
       console.error('Error toggling trash:', error);
     }
@@ -133,9 +128,7 @@ export default function DashboardPage() {
         method: 'DELETE'
       });
 
-      if (response.ok) {
-        fetchFiles(); // Refresh the file list
-      }
+      if (response.ok) fetchFiles();
     } catch (error) {
       console.error('Error deleting file:', error);
     }
@@ -153,7 +146,7 @@ export default function DashboardPage() {
       });
 
       if (response.ok) {
-        fetchFiles(); // Refresh the file list
+        fetchFiles();
       } else {
         throw new Error('Failed to create folder');
       }
@@ -163,12 +156,11 @@ export default function DashboardPage() {
     }
   };
 
-  const handleUploadFiles = async (files: FileList) => {
+  const handleUploadFiles = async (filesToUpload: FileList) => {
     try {
-      // Upload files one by one
-      for (let i = 0; i < files.length; i++) {
+      for (let i = 0; i < filesToUpload.length; i++) {
         const formData = new FormData();
-        formData.append('file', files[i]);
+        formData.append('file', filesToUpload[i]);
         if (currentFolder) {
           formData.append('parentId', currentFolder);
         }
@@ -179,22 +171,57 @@ export default function DashboardPage() {
         });
 
         if (!response.ok) {
-          console.error(`Failed to upload ${files[i].name}`);
+          console.error(`Failed to upload ${filesToUpload[i].name}`);
         }
       }
 
-      fetchFiles(); // Refresh the file list
+      fetchFiles();
     } catch (error) {
       console.error('Error uploading files:', error);
     }
   };
+
+  // <<<--- UPDATED DOWNLOAD FUNCTION ---<<<
+  const handleDownload = async (fileId: string, fileName: string) => {
+    try {
+      // 1. Call your own backend API endpoint
+      const response = await fetch(`/api/files/${fileId}/download`);
+      console.log(response);
+      if (!response.ok) {
+        // If the server responded with an error, try to show it
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to download file");
+      }
+
+      // 2. Get the file data as a "blob" (a file-like object)
+      const blob = await response.blob();
+      
+      // 3. Create a temporary URL for this blob that lives in the browser's memory
+      const url = window.URL.createObjectURL(blob);
+
+      // 4. Use the same link-clicking trick as before, but with the new temporary URL
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", fileName); // Use the original filename
+      document.body.appendChild(link);
+      link.click();
+
+      // 5. Clean up by removing the link and revoking the temporary URL
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      alert(`An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
 
   return (
     <div className="flex bg-[#f8f9fa] min-h-screen font-sans text-[#3c4043]">
       {/* Sidebar Navigation */}
       <aside className="bg-[#f8f9fa] w-64 p-4 flex flex-col h-screen fixed top-0 left-0">
         <div className="flex items-center gap-2 mb-6 px-2">
-          {/* A simple logo */}
           <svg className="h-8 w-8 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
           <span className="text-2xl font-bold text-slate-700">Droply</span>
         </div>
@@ -236,7 +263,6 @@ export default function DashboardPage() {
           </div>
         </header>
         
-        {/* Breadcrumb Navigation */}
         {view === 'home' && currentFolder && (
           <div className="flex items-center gap-2 mb-4 text-sm text-slate-600">
             <button
@@ -257,9 +283,7 @@ export default function DashboardPage() {
           {view === 'trash' && 'Trash'}
         </h2>
 
-        {/* File List View */}
         <div className="w-full">
-          {/* List Header */}
           <div className="grid grid-cols-[minmax(0,4fr)_1fr_2fr_1fr_120px] gap-4 px-4 py-2 border-b border-slate-200 text-sm font-medium text-slate-500">
             <span>Name</span>
             <span>Owner</span>
@@ -268,7 +292,6 @@ export default function DashboardPage() {
             <span className="text-center">Actions</span>
           </div>
 
-          {/* List Items */}
           {files.map((file) => (
             <div
               key={file.id}
@@ -285,7 +308,20 @@ export default function DashboardPage() {
               <div className="text-sm">{new Date(file.updatedAt).toLocaleDateString()}</div>
               <div className="text-sm">--</div>
               <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                {/* Star button - only show if not in trash view */}
+                
+                {!file.isFolder && view !== 'trash' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(file.id, file.name);
+                    }}
+                    className="p-1 rounded hover:bg-slate-200 text-slate-500"
+                    title="Download file"
+                  >
+                    <Download size={16} />
+                  </button>
+                )}
+
                 {view !== 'trash' && (
                   <button
                     onClick={(e) => {
@@ -299,15 +335,12 @@ export default function DashboardPage() {
                   </button>
                 )}
 
-                {/* Trash/Restore button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     if (view === 'trash') {
-                      // In trash view, restore file
                       toggleTrash(file.id, true);
                     } else {
-                      // In other views, move to trash
                       toggleTrash(file.id, false);
                     }
                   }}
@@ -317,7 +350,6 @@ export default function DashboardPage() {
                   {view === 'trash' ? <Folder size={16} /> : <Trash2 size={16} />}
                 </button>
 
-                {/* Delete button - only show in trash view */}
                 {view === 'trash' && (
                   <button
                     onClick={(e) => {
@@ -336,7 +368,6 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Modals */}
       <NewItemModal
         isOpen={isNewItemModalOpen}
         onClose={() => setIsNewItemModalOpen(false)}
