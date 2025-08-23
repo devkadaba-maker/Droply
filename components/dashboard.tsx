@@ -13,6 +13,8 @@ import {
   Search,
   MoreVertical,
 } from 'lucide-react';
+import NewItemModal from './NewItemModal';
+import FileUploadArea from './FileUploadArea';
 
 // Define the shape of our file data
 interface FileData {
@@ -45,11 +47,147 @@ export default function DashboardPage() {
   const { userId } = useAuth();
   const [files, setFiles] = useState<FileData[]>([]);
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
+  const [view, setView] = useState<'home' | 'starred' | 'trash'>('home');
+  const [isNewItemModalOpen, setIsNewItemModalOpen] = useState(false);
+  const [isUploadAreaOpen, setIsUploadAreaOpen] = useState(false);
 
-  // Data-fetching and action functions remain the same
-  useEffect(() => { if (userId) fetchFiles(); }, [userId, currentFolder]);
-  const fetchFiles = async () => { if (!userId) return; const parentIdQuery = currentFolder ? `&parentId=${currentFolder}` : ''; const response = await fetch(`/api/files?userId=${userId}${parentIdQuery}`); if (response.ok) { const data = await response.json(); setFiles(data.files || []); }};
-  const handleFileClick = (file: FileData) => { if (file.isFolder) { setCurrentFolder(file.id); } else { window.open(file.fileUrl, '_blank'); }};
+  // Enhanced data-fetching with different view support
+  useEffect(() => {
+    if (userId) fetchFiles();
+  }, [userId, currentFolder, view]);
+
+  const fetchFiles = async () => {
+    if (!userId) return;
+
+    let queryParams = `userId=${userId}`;
+
+    // Add parent folder if navigating within folders (only for home view)
+    if (view === 'home' && currentFolder) {
+      queryParams += `&parentId=${currentFolder}`;
+    }
+
+    // Add view-specific parameters
+    if (view === 'starred') {
+      queryParams += '&isStarred=true';
+    } else if (view === 'trash') {
+      queryParams += '&isTrash=true';
+    }
+
+    const response = await fetch(`/api/files?${queryParams}`);
+    if (response.ok) {
+      const data = await response.json();
+      setFiles(data.files || []);
+    }
+  };
+
+  const handleFileClick = (file: FileData) => {
+    if (file.isFolder && view === 'home') {
+      setCurrentFolder(file.id);
+    } else if (!file.isFolder) {
+      window.open(file.fileUrl);
+    }
+  };
+
+  const handleNavigation = (newView: 'home' | 'starred' | 'trash') => {
+    setView(newView);
+    setCurrentFolder(null); // Reset folder navigation when switching views
+  };
+
+  const toggleStar = async (fileId: string, isCurrentlyStarred: boolean) => {
+    try {
+      const response = await fetch(`/api/files/${fileId}/star`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isStarred: !isCurrentlyStarred })
+      });
+
+      if (response.ok) {
+        fetchFiles(); // Refresh the file list
+      }
+    } catch (error) {
+      console.error('Error toggling star:', error);
+    }
+  };
+
+  const toggleTrash = async (fileId: string, isCurrentlyTrashed: boolean) => {
+    try {
+      const response = await fetch(`/api/files/${fileId}/trash`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isTrash: !isCurrentlyTrashed })
+      });
+
+      if (response.ok) {
+        fetchFiles(); // Refresh the file list
+      }
+    } catch (error) {
+      console.error('Error toggling trash:', error);
+    }
+  };
+
+  const deleteFile = async (fileId: string) => {
+    if (!confirm('Are you sure you want to permanently delete this file?')) return;
+
+    try {
+      const response = await fetch(`/api/files/${fileId}/delete`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        fetchFiles(); // Refresh the file list
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    }
+  };
+
+  const createFolder = async (name: string) => {
+    try {
+      const response = await fetch('/api/folders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          parentId: currentFolder
+        })
+      });
+
+      if (response.ok) {
+        fetchFiles(); // Refresh the file list
+      } else {
+        throw new Error('Failed to create folder');
+      }
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      throw error;
+    }
+  };
+
+  const handleUploadFiles = async (files: FileList) => {
+    try {
+      // Upload files one by one
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append('file', files[i]);
+        if (currentFolder) {
+          formData.append('parentId', currentFolder);
+        }
+
+        const response = await fetch('/api/files/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          console.error(`Failed to upload ${files[i].name}`);
+        }
+      }
+
+      fetchFiles(); // Refresh the file list
+    } catch (error) {
+      console.error('Error uploading files:', error);
+    }
+  };
 
   return (
     <div className="flex bg-[#f8f9fa] min-h-screen font-sans text-[#3c4043]">
@@ -61,16 +199,24 @@ export default function DashboardPage() {
           <span className="text-2xl font-bold text-slate-700">Droply</span>
         </div>
         
-        <button className="flex items-center justify-center gap-3 bg-white w-32 h-14 rounded-2xl shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)] hover:shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)] transition-shadow mb-6">
+        <button
+          onClick={() => setIsNewItemModalOpen(true)}
+          className="flex items-center justify-center gap-3 bg-white w-32 h-14 rounded-2xl shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)] hover:shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)] transition-shadow mb-6"
+        >
           <Plus size={24} />
           <span className="text-base font-medium">New</span>
         </button>
         
         <nav className="flex flex-col gap-1">
-          <NavLink icon={<Home size={20} />} label="Home" isActive={true} />
-          <NavLink icon={<Star size={20} />} label="Starred" />
-          <NavLink icon={<Clock size={20} />} label="Recent" />
-          <NavLink icon={<Trash2 size={20} />} label="Bin" />
+          <div onClick={() => handleNavigation('home')}>
+            <NavLink icon={<Home size={20} />} label="Home" isActive={view === 'home'} />
+          </div>
+          <div onClick={() => handleNavigation('starred')}>
+            <NavLink icon={<Star size={20} />} label="Starred" isActive={view === 'starred'} />
+          </div>
+          <div onClick={() => handleNavigation('trash')}>
+            <NavLink icon={<Trash2 size={20} />} label="Bin" isActive={view === 'trash'} />
+          </div>
         </nav>
       </aside>
 
@@ -90,40 +236,120 @@ export default function DashboardPage() {
           </div>
         </header>
         
-        <h2 className="text-2xl text-slate-800 mb-4">My Drive</h2>
+        {/* Breadcrumb Navigation */}
+        {view === 'home' && currentFolder && (
+          <div className="flex items-center gap-2 mb-4 text-sm text-slate-600">
+            <button
+              onClick={() => setCurrentFolder(null)}
+              className="hover:text-blue-600 font-medium"
+            >
+              My Drive
+            </button>
+            <span>/</span>
+            <span className="font-medium">Current Folder</span>
+          </div>
+        )}
+
+        <h2 className="text-2xl text-slate-800 mb-4">
+          {view === 'home' && !currentFolder && 'My Drive'}
+          {view === 'home' && currentFolder && 'Current Folder'}
+          {view === 'starred' && 'Starred'}
+          {view === 'trash' && 'Trash'}
+        </h2>
 
         {/* File List View */}
         <div className="w-full">
           {/* List Header */}
-          <div className="grid grid-cols-[minmax(0,4fr)_1fr_2fr_1fr_48px] gap-4 px-4 py-2 border-b border-slate-200 text-sm font-medium text-slate-500">
+          <div className="grid grid-cols-[minmax(0,4fr)_1fr_2fr_1fr_120px] gap-4 px-4 py-2 border-b border-slate-200 text-sm font-medium text-slate-500">
             <span>Name</span>
             <span>Owner</span>
             <span>Last Modified</span>
             <span>File size</span>
-            <span className="w-[48px]"></span> {/* Spacer for actions */}
+            <span className="text-center">Actions</span>
           </div>
 
           {/* List Items */}
           {files.map((file) => (
             <div
               key={file.id}
-              onClick={() => handleFileClick(file)}
-              className="grid grid-cols-[minmax(0,4fr)_1fr_2fr_1fr_48px] gap-4 items-center h-12 px-4 border-b border-slate-200 hover:bg-blue-50 rounded-lg cursor-pointer group"
+              className="grid grid-cols-[minmax(0,4fr)_1fr_2fr_1fr_120px] gap-4 items-center h-12 px-4 border-b border-slate-200 hover:bg-blue-50 rounded-lg group"
             >
-              <div className="flex items-center gap-4 truncate">
+              <div
+                className="flex items-center gap-4 truncate cursor-pointer"
+                onClick={() => handleFileClick(file)}
+              >
                 {file.isFolder ? <Folder size={24} className="text-slate-500" /> : <File size={24} className="text-slate-500" />}
                 <span className="font-medium truncate">{file.name}</span>
               </div>
               <div className="text-sm">me</div>
               <div className="text-sm">{new Date(file.updatedAt).toLocaleDateString()}</div>
               <div className="text-sm">--</div>
-              <div className="flex justify-center opacity-0 group-hover:opacity-100">
-                <MoreVertical size={20} className="text-slate-500" />
+              <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Star button - only show if not in trash view */}
+                {view !== 'trash' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleStar(file.id, file.isStarred);
+                    }}
+                    className={`p-1 rounded hover:bg-slate-200 ${file.isStarred ? 'text-yellow-500' : 'text-slate-500'}`}
+                    title={file.isStarred ? 'Remove from starred' : 'Add to starred'}
+                  >
+                    <Star size={16} fill={file.isStarred ? 'currentColor' : 'none'} />
+                  </button>
+                )}
+
+                {/* Trash/Restore button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (view === 'trash') {
+                      // In trash view, restore file
+                      toggleTrash(file.id, true);
+                    } else {
+                      // In other views, move to trash
+                      toggleTrash(file.id, false);
+                    }
+                  }}
+                  className="p-1 rounded hover:bg-slate-200 text-slate-500"
+                  title={view === 'trash' ? 'Restore file' : 'Move to trash'}
+                >
+                  {view === 'trash' ? <Folder size={16} /> : <Trash2 size={16} />}
+                </button>
+
+                {/* Delete button - only show in trash view */}
+                {view === 'trash' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteFile(file.id);
+                    }}
+                    className="p-1 rounded hover:bg-red-100 text-red-500"
+                    title="Permanently delete"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       </main>
+
+      {/* Modals */}
+      <NewItemModal
+        isOpen={isNewItemModalOpen}
+        onClose={() => setIsNewItemModalOpen(false)}
+        onCreateFolder={createFolder}
+        onUploadFiles={handleUploadFiles}
+      />
+
+      <FileUploadArea
+        isOpen={isUploadAreaOpen}
+        onClose={() => setIsUploadAreaOpen(false)}
+        onUploadComplete={fetchFiles}
+        parentId={currentFolder}
+      />
     </div>
   );
 }

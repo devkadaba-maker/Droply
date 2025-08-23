@@ -14,7 +14,7 @@ const imagekit = new ImageKit({
     privateKey: process.env.IMAGEKIT_PRIVATE_KEY!,
     urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT!
 });
-
+console.log(1)
 export async function POST(request: NextRequest) {
     try {
         const { userId } = await auth();
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         if (!file) {
             return NextResponse.json({ error: "File is required" }, { status: 400 });
         }
-
+console.log(2)
         // --- Improved Parent Folder Logic ---
         let parentFolderPath = `/droply/${userId}`; // Default to root folder
         if (parentId) {
@@ -50,11 +50,11 @@ export async function POST(request: NextRequest) {
             parentFolderPath = parentFolder.path; // Use the parent folder's path
         }
         // --- End of Improved Logic ---
-
+console.log(3)
         const buffer = await file.arrayBuffer();
         const fileBuffer = Buffer.from(buffer);
         const originalName = file.name;
-
+console.log(3.5)
         // Upload to ImageKit
         const uploadResponse = await imagekit.upload({
             file: fileBuffer,
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
             folder: parentFolderPath,
             useUniqueFileName: true, // Recommended to avoid name conflicts
         });
-
+console.log(4)
         // Prepare data for our database
         const fileData = {
             userId,
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         };
 
         const [newFile] = await db.insert(files).values(fileData).returning();
-
+console.log(5)
         return NextResponse.json(newFile, { status: 201 });
 
     } catch (error) {
