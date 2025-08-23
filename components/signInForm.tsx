@@ -1,160 +1,86 @@
-"use client"
+import { SignIn } from "@clerk/nextjs";
 
-import { signInSchema } from "@/schema/signInSchema"
-import { useSignIn } from "@clerk/nextjs"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { useState } from "react"
-import {Card, CardBody, CardHeader, CardFooter} from "@heroui/card";
-import {Button} from "@heroui/button";
-import {Input} from "@heroui/input";
-import {Divider} from "@heroui/divider";
-import { AlertCircle, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
+export default function SignInForm() {
+  return (
+    <section className="bg-white">
+      <div className="lg:grid lg:min-h-screen lg:grid-cols-12">
+        {/* Left Branding Section */}
+        <section className="relative flex h-32 items-end bg-gray-900 lg:col-span-5 lg:h-full xl:col-span-6">
+          <div className="absolute inset-0 bg-blue-600 opacity-80 z-10"></div>
+          
+          <img
+            alt="Background"
+            src="https://images.unsplash.com/photo-1585399009939-5381f14120e5?q=80&w=2940&auto=format&fit=crop"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
 
-interface ClerkError {
-  errors?: Array<{ message: string }>;
-}
+          <div className="hidden lg:relative lg:block lg:p-12 z-20">
+            <a className="flex items-center gap-2" href="/">
+                <svg className="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                <span className="text-3xl font-bold text-white">Droply</span>
+            </a>
 
-export default function SignInForm(){
-    const router = useRouter()
-    const {signIn, isLoaded, setActive} = useSignIn()
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [authError, setAuthError] = useState<string | null> (null)
-    const [showPassword, setShowPassword] = useState(false)
-    const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof signInSchema>>({
-        resolver: zodResolver(signInSchema),
-        defaultValues :{
-            identifier: "",
-            password: ""
-        }
-    })
+            <h2 className="mt-6 text-2xl font-bold text-white sm:text-3xl md:text-4xl">
+              Welcome back to Droply
+            </h2>
 
-    const onSubmit = async(data:z.infer<typeof signInSchema>) => {
-        if(!isLoaded) return
-        setIsSubmitting(true)
-        setAuthError(null)
-        try{
-            const result = await signIn.create({
-                identifier: data.identifier,
-                password: data.password
-            })
-            if(result.status === "complete"){
-                await setActive({session : result.createdSessionId})
-                router.push("/dashboard")
-            }else{
-                console.log("Sign in incomplete:", result)
-                setAuthError("Sign in error")
-            }
-        }catch(error: unknown){
-            const clerkError = error as ClerkError;
-            setAuthError(clerkError?.errors?.[0]?.message || "An error occurred while signing in")
-        }finally{
-            setIsSubmitting(false)
-        }
-    }
-    return(
-        <Card className="w-full max-w-md border border-default-200 bg-default-50 shadow-xl">
-      <CardHeader className="flex flex-col gap-1 items-center pb-2">
-        <h1 className="text-2xl font-bold text-default-900">Welcome Back</h1>
-        <p className="text-default-500 text-center">
-          Sign in to access your secure cloud storage
-        </p>
-      </CardHeader>
-
-      <Divider />
-
-      <CardBody className="py-6">
-        {authError && (
-          <div className="bg-danger-50 text-danger-700 p-4 rounded-lg mb-6 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <p>{authError}</p>
+            <p className="mt-4 leading-relaxed text-white/90">
+              Your secure and simple cloud storage solution. Access your files anywhere, anytime.
+            </p>
           </div>
-        )}
+        </section>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <label
-              htmlFor="identifier"
-              className="text-sm font-medium text-default-900"
-            >
-              Email
-            </label>
-            <Input
-              id="identifier"
-              type="email"
-              placeholder="your.email@example.com"
-              startContent={<Mail className="h-4 w-4 text-default-500" />}
-              isInvalid={!!errors.identifier}
-              errorMessage={errors.identifier?.message}
-              {...register("identifier")}
-              className="w-full"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium text-default-900"
+        {/* Right Sign-In Form Section */}
+        <main className="flex items-center justify-center px-8 py-8 sm:px-12 lg:col-span-7 lg:px-16 lg:py-12 xl:col-span-6">
+          <div className="max-w-xl lg:max-w-3xl">
+            {/* Mobile Logo */}
+            <div className="relative -mt-16 block lg:hidden">
+              <a
+                className="inline-flex size-16 items-center justify-center rounded-full bg-white text-blue-600 sm:size-20"
+                href="/"
               >
-                Password
-              </label>
+                <span className="sr-only">Home</span>
+                <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+              </a>
+
+              <h1 className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">
+                Welcome back to Droply
+              </h1>
             </div>
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
-              startContent={<Lock className="h-4 w-4 text-default-500" />}
-              endContent={
-                <Button
-                  isIconOnly
-                  variant="light"
-                  size="sm"
-                  onClick={() => setShowPassword(!showPassword)}
-                  type="button"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-default-500" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-default-500" />
-                  )}
-                </Button>
-              }
-              isInvalid={!!errors.password}
-              errorMessage={errors.password?.message}
-              {...register("password")}
-              className="w-full"
+
+            {/* Clerk Sign-In Component with Custom Styling */}
+            <SignIn
+              path="/sign-in"
+              appearance={{
+                elements: {
+                  formButtonPrimary: 
+                    'bg-blue-600 hover:bg-blue-700 text-sm normal-case',
+                  card: 
+                    'shadow-none border-none bg-transparent',
+                  rootBox:
+                    'border-none',
+                  headerTitle:
+                    'hidden',
+                  headerSubtitle:
+                    'hidden',
+                  socialButtonsBlockButton:
+                    'border-slate-200',
+                  dividerLine:
+                    'bg-slate-200',
+                  dividerText:
+                    'text-slate-500',
+                  formFieldInput:
+                    'rounded-lg',
+                  footerActionText:
+                    'text-slate-500',
+                  footerActionLink:
+                    'text-blue-600 hover:text-blue-700 font-medium'
+                },
+              }}
             />
           </div>
-
-          <Button
-            type="submit"
-            color="primary"
-            className="w-full"
-            isLoading={isSubmitting}
-          >
-            {isSubmitting ? "Signing in..." : "Sign In"}
-          </Button>
-        </form>
-      </CardBody>
-
-      <Divider />
-
-      <CardFooter className="flex justify-center py-4">
-        <p className="text-sm text-default-600">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/sign-up"
-            className="text-primary hover:underline font-medium"
-          >
-            Sign up
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+        </main>
+      </div>
+    </section>
   );
 }
-    
