@@ -5,7 +5,7 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Progress } from "@nextui-org/react";
-import { AlertCircle, CheckCircle, UploadCloud } from "lucide-react";
+import { AlertCircle, CheckCircle, UploadCloud, FileText, Image, Video, Music, Archive } from "lucide-react";
 
 interface FileUploadProps {
   parentId: string | null;
@@ -16,6 +16,7 @@ export default function FileUpload({ parentId, onUploadComplete }: FileUploadPro
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   console.log('FileUpload component rendered with parentId:', parentId);
 
