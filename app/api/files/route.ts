@@ -1,62 +1,55 @@
+// in app/api/files/route.ts
+
 import { db } from "@/lib/db";
 import { files } from "@/lib/db/schema";
 import { auth } from "@clerk/nextjs/server";
-import { eq, and, isNull, } from "drizzle-orm"
+import { eq, and, isNull, desc } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
-
-export async function GET(request: NextRequest){
+export async function GET(request: NextRequest) {
     try {
         const { userId } = await auth();
-        if(!userId){
+        if (!userId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        
-        const searchParams = request.nextUrl.searchParams;
-        const queryUserId = searchParams.get("userId");
-        const parentId = searchParams.get("parentId")
-        
-        if(!queryUserId||queryUserId !== userId){
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const { searchParams } = request.nextUrl;
+        const parentId = searchParams.get("parentId");
+        const isStarred = searchParams.get("isStarred") === 'true';
+        const isTrash = searchParams.get("isTrash") === 'true';
+
+        // Start with the base condition for the user
+        const conditions = [eq(files.userId, userId)];
+
+        // --- New Filtering Logic ---
+        if (isStarred) {
+            // If filtering for starred, show only non-trashed, starred files
+            conditions.push(eq(files.isStarred, true));
+            conditions.push(eq(files.isTrash, false));
+        } else if (isTrash) {
+            // If filtering for trash, show only trashed files
+            conditions.push(eq(files.isTrash, true));
+        } else {
+            // This is the default "Home" or "My Drive" view
+            conditions.push(eq(files.isTrash, false));
+            if (parentId) {
+                conditions.push(eq(files.parentId, parentId));
+            } else {
+                conditions.push(isNull(files.parentId));
+            }
         }
-        //get all files
-        let userFiles;
-        if(parentId){
-            //fetching from a specific folder
-            const userFiles = await db
+        // --- End of New Logic ---
+
+        const userFiles = await db
             .select()
             .from(files)
-            .where(
-                and(
-                    eq(files.userId, userId), 
-                    eq(files.parentId, parentId), 
+            .where(and(...conditions))
+            .orderBy(desc(files.updatedAt)); // Order by most recently updated
 
-
-                )
-            )
-        }else{
-            userFiles = await db 
-            .select()
-            .from(files)
-            .where(
-                and(
-                    eq(files.userId, userId), 
-                    isNull(files.parentId)
-
-                )
-            )
-        }
-        return NextResponse.json({
-            message: "Files fetched successfully", 
-            status: 200, 
-            files: userFiles
-        })
+        return NextResponse.json({ files: userFiles });
 
     } catch (error) {
-        NextResponse.json({ error: "Internal Server Error, In the fethcing files section, routes.ts in the files folder." }, { status: 500 });
-        
+        console.error("Error fetching files:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
-
-
 }
